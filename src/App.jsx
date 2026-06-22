@@ -48,7 +48,7 @@ const DRUG_RESULTS = ['Pending','Negative','Positive',''];
 const MSG_ANSWERED = ['Yes','No','Read','Call',''];
 
 // CPM options — OTR rates per mile + Local daily rate
-const CPM_OPTIONS = ['$0.37','$0.45','$0.84','$200.00','',''];
+const CPM_OPTIONS = ['$0.37','$0.40','$0.42','$0.45','$200'];
 
 const ACTIVE_STATUSES = new Set([
   'Sent message','Sent message - Indeed','Call','Will think','FADV (First Advantage)',
@@ -267,7 +267,7 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
     // Suggest CPM defaults if empty
     const currentCPM = row[COL['CPM']];
     if (!currentCPM) {
-      if (newShift === 'Local') set(COL['CPM'], '$200.00');
+      if (newShift === 'Local') set(COL['CPM'], '$200');
       else if (newShift === 'OTR (48 states)') set(COL['CPM'], '$0.45');
     }
   };
