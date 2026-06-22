@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-// ── Column definitions (matches spreadsheet columns A→AV, 48 cols) ──
+// ── Column definitions (matches spreadsheet columns A→AX, 50 cols) ──
 const COLUMNS = [
   'FADV Case ID','Name','Phone','Email','Location','FedEx ID','Recruiter','Source',
-  'Route / Position','Shift','Current Phase','Pipeline Status','Msg Answered',
+  'Route / Position','Shift','CPM','Sign in Bonus','Current Phase','Pipeline Status','Msg Answered',
   'CDL Class','Experience','Doubles & Triples','FADV Link Sent','FADV Completed',
   'FADV Status','Background Review','Criminal Review','MVR Review','Drug Test Sent',
   'Drug Test Result','DocuSign Sent','DocuSign Signed','Clearinghouse Consent',
@@ -15,6 +15,7 @@ const COLUMNS = [
 ];
 
 const COL = Object.fromEntries(COLUMNS.map((c, i) => [c, i]));
+const TOTAL_COLS = COLUMNS.length; // 50
 
 const PHASES = [
   'Phase 1 - Initial Contact','Phase 2 - Pre-Screening','Phase 3 - First Advantage',
@@ -46,6 +47,9 @@ const COMPLIANCE_VALS = ['Pending','Complete','Issue','N/A',''];
 const DRUG_RESULTS = ['Pending','Negative','Positive',''];
 const MSG_ANSWERED = ['Yes','No','Read','Call',''];
 
+// CPM options — OTR rates per mile + Local daily rate
+const CPM_OPTIONS = ['$0.37','$0.45','$0.84','$200.00','',''];
+
 const ACTIVE_STATUSES = new Set([
   'Sent message','Sent message - Indeed','Call','Will think','FADV (First Advantage)',
   'Drug test / Docusign','Docusign','Drug test','Drug test results','Employment verification',
@@ -66,7 +70,7 @@ async function fetchCandidates() {
   const { rows } = await res.json();
   return rows.map(row => {
     const padded = [...row];
-    while (padded.length < 48) padded.push('');
+    while (padded.length < TOTAL_COLS) padded.push('');
     return padded;
   });
 }
@@ -223,7 +227,7 @@ function statusColor(status) {
 }
 
 // ── Field component ──
-function Field({ label, value, onChange, type='text', options=null, fullWidth=false }) {
+function Field({ label, value, onChange, type='text', options=null, fullWidth=false, hint=null }) {
   const style = fullWidth ? { ...S.field, gridColumn: '1 / -1' } : S.field;
   return (
     <div style={style}>
@@ -238,6 +242,7 @@ function Field({ label, value, onChange, type='text', options=null, fullWidth=fa
       ) : (
         <input style={S.fieldInput} type={type} value={value} onChange={e => onChange(e.target.value)} />
       )}
+      {hint && <span style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{hint}</span>}
     </div>
   );
 }
@@ -246,7 +251,7 @@ function Field({ label, value, onChange, type='text', options=null, fullWidth=fa
 function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
   const [row, setRow] = useState(() => {
     if (candidate) return [...candidate];
-    const r = new Array(48).fill('');
+    const r = new Array(TOTAL_COLS).fill('');
     r[COL['Date Entered Phase']] = today();
     r[COL['Last Update']] = today();
     r[COL['CDL Class']] = 'A';
@@ -255,6 +260,17 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
   const [saving, setSaving] = useState(false);
 
   const set = (col, val) => setRow(r => { const n = [...r]; n[col] = val; return n; });
+
+  // Auto-suggest CPM based on Shift
+  const handleShiftChange = (newShift) => {
+    set(COL['Shift'], newShift);
+    // Suggest CPM defaults if empty
+    const currentCPM = row[COL['CPM']];
+    if (!currentCPM) {
+      if (newShift === 'Local') set(COL['CPM'], '$200.00');
+      else if (newShift === 'OTR (48 states)') set(COL['CPM'], '$0.45');
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -274,6 +290,9 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
   };
 
   const v = (col) => row[col] || '';
+  const shift = v(COL['Shift']);
+  const cpmHint = shift === 'Local' ? '$ per day (Local = $200/day)' :
+                  shift === 'OTR (48 states)' ? '$ per mile (split miles)' : '';
 
   return (
     <div style={S.modal} onClick={e => e.target === e.currentTarget && onClose()}>
@@ -300,7 +319,9 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
             <Field label="Recruiter" value={v(COL['Recruiter'])} onChange={val => set(COL['Recruiter'], val)} options={RECRUITERS} />
             <Field label="Source" value={v(COL['Source'])} onChange={val => set(COL['Source'], val)} options={SOURCES} />
             <Field label="Route / Position" value={v(COL['Route / Position'])} onChange={val => set(COL['Route / Position'], val)} options={ROUTES} />
-            <Field label="Shift" value={v(COL['Shift'])} onChange={val => set(COL['Shift'], val)} options={SHIFTS} />
+            <Field label="Shift" value={v(COL['Shift'])} onChange={handleShiftChange} options={SHIFTS} />
+            <Field label="CPM / Pay Rate" value={v(COL['CPM'])} onChange={val => set(COL['CPM'], val)} options={CPM_OPTIONS} hint={cpmHint} />
+            <Field label="Sign in Bonus ($1,000 after 90d)" value={v(COL['Sign in Bonus'])} onChange={val => set(COL['Sign in Bonus'], val)} options={YES_NO} />
             <Field label="Msg Answered" value={v(COL['Msg Answered'])} onChange={val => set(COL['Msg Answered'], val)} options={MSG_ANSWERED} />
           </div>
         </div>
@@ -385,7 +406,7 @@ export default function App() {
   const [filterPhase, setFilterPhase] = useState('');
   const [filterRecruiter, setFilterRecruiter] = useState('');
   const [filterStatus, setFilterStatus] = useState('active');
-  const [modal, setModal] = useState(null); // { candidate, rowIndex, isNew }
+  const [modal, setModal] = useState(null);
   const [saving, setSaving] = useState('');
   const [lastRefresh, setLastRefresh] = useState(null);
 
@@ -518,14 +539,14 @@ export default function App() {
           <table style={S.table}>
             <thead>
               <tr>
-                {['Name','Phone','Recruiter','Route / Position','Current Phase','Pipeline Status','Doubles & Triples','Days','Flags',''].map(h => (
+                {['Name','Phone','Recruiter','Route / Position','CPM','Bonus','Current Phase','Pipeline Status','D&T','Days','Flags',''].map(h => (
                   <th key={h} style={S.th}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={10} style={{ ...S.td, textAlign: 'center', color: '#999', padding: 40 }}>No candidates found</td></tr>
+                <tr><td colSpan={12} style={{ ...S.td, textAlign: 'center', color: '#999', padding: 40 }}>No candidates found</td></tr>
               ) : filtered.map((row, i) => {
                 const realIndex = candidates.indexOf(row);
                 const overdue = isOverdue(row);
@@ -539,6 +560,8 @@ export default function App() {
                     <td style={S.td}>{row[COL['Phone']] || '—'}</td>
                     <td style={S.td}>{row[COL['Recruiter']] || '—'}</td>
                     <td style={S.td}>{row[COL['Route / Position']] || '—'}</td>
+                    <td style={{ ...S.td, fontWeight: 600, color: '#198754' }}>{row[COL['CPM']] || '—'}</td>
+                    <td style={S.td}>{row[COL['Sign in Bonus']] === 'Yes' ? '💰 Yes' : (row[COL['Sign in Bonus']] || '—')}</td>
                     <td style={S.td}>
                       <span style={S.badge(phaseColor(row[COL['Current Phase']]))}>
                         {row[COL['Current Phase']] || '—'}
