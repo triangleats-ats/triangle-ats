@@ -405,6 +405,7 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [filterPhase, setFilterPhase] = useState('');
   const [filterRecruiter, setFilterRecruiter] = useState('');
+  const [filterRoute, setFilterRoute] = useState('');
   const [filterStatus, setFilterStatus] = useState('active');
   const [modal, setModal] = useState(null);
   const [saving, setSaving] = useState('');
@@ -444,10 +445,12 @@ export default function App() {
     const status = row[COL['Pipeline Status']] || '';
     const phase = row[COL['Current Phase']] || '';
     const recruiter = row[COL['Recruiter']] || '';
+    const route = row[COL['Route / Position']] || '';
 
     if (search && !name.includes(search.toLowerCase()) && !phone.includes(search.toLowerCase())) return false;
     if (filterPhase && phase !== filterPhase) return false;
     if (filterRecruiter && recruiter !== filterRecruiter) return false;
+    if (filterRoute && route !== filterRoute) return false;
     if (filterStatus === 'active' && !ACTIVE_STATUSES.has(status)) return false;
     if (filterStatus === 'hired' && status !== 'Hired') return false;
     if (filterStatus === 'declined' && !DECLINED_STATUSES.has(status)) return false;
@@ -514,6 +517,10 @@ export default function App() {
         <select style={S.select} value={filterRecruiter} onChange={e => setFilterRecruiter(e.target.value)}>
           <option value="">All recruiters</option>
           {RECRUITERS.map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <select style={S.select} value={filterRoute} onChange={e => setFilterRoute(e.target.value)}>
+          <option value="">All routes</option>
+          {ROUTES.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
         <span style={{ marginLeft: 'auto', fontSize: 13, color: '#666' }}>{filtered.length} candidates</span>
         <button style={S.btn('#198754')} onClick={() => setModal({ candidate: null, rowIndex: null, isNew: true })}>
