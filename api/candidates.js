@@ -22,10 +22,10 @@ export default async function handler(req, res) {
     const sheets = google.sheets({ version: 'v4', auth });
 
     if (req.method === 'GET') {
-      // Read all candidates from row 4 onward (rows 1-3 are headers), columns A:AX (50 cols)
+      // Read all candidates from row 4 onward (rows 1-3 are headers), columns A:AY (51 cols)
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: 'Candidatos!A4:AX',
+        range: 'Candidatos!A4:AY',
       });
       const rows = response.data.values || [];
       res.status(200).json({ rows });
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
         const sheetRow = rowIndex + 4;
         await sheets.spreadsheets.values.update({
           spreadsheetId: SPREADSHEET_ID,
-          range: `Candidatos!A${sheetRow}:AX${sheetRow}`,
+          range: `Candidatos!A${sheetRow}:AY${sheetRow}`,
           valueInputOption: 'USER_ENTERED',
           requestBody: { values: [rowData] },
         });
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
       } else if (action === 'append' && newRow) {
         await sheets.spreadsheets.values.append({
           spreadsheetId: SPREADSHEET_ID,
-          range: 'Candidatos!A4:AX',
+          range: 'Candidatos!A4:AY',
           valueInputOption: 'USER_ENTERED',
           insertDataOption: 'INSERT_ROWS',
           requestBody: { values: [newRow] },
