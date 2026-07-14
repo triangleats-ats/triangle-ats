@@ -34,11 +34,11 @@ const PIPELINE_STATUSES = [
   'Declined - No response','Declined - Failed drug test','Declined - Failed background check'
 ];
 
-const RECRUITERS = ['Bianka','Carol','Catarina','Margarita'];
-const SOURCES = ['Indeed','Referral','Walk-in','Website','Call','Other','Transfer'];
+const RECRUITERS = ['Carol','Catarina','Margarita'];
+const SOURCES = ['Indeed','Referral','Walk-in','Call','Other','Transfer'];
 const ROUTES = [
-  'OTR - 328','OTR - 327','MARIETTA - 305','ORL DRIVING TX','TX DOMICILED - DRIVING FL',
-  'MARIETTA 305 - DRIVING TX','OCALA - 344','HOUSTON 774 TX','FORT WORTH 760 TX','SANFORD - 347',
+  'ORL - 328','ORL - 327','MARIETTA - 305','SANFORD - 347','OCALA - 344','ORL DRIVING TX','TX DRIVING FL',
+  'MARIETTA 305 - DRIVING TX','HOUSTON 774 TX','FORT WORTH 760 TX',
   'DALL 753 TX','HOUSTON 754 TX'
 ];
 const SHIFTS = ['OTR (48 states)','Local','Overnight','Day'];
