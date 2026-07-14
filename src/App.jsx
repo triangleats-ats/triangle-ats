@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-// ── Column definitions (matches spreadsheet columns A→AX, 50 cols) ──
+// ── Column definitions (matches spreadsheet columns A→AY, 51 cols) ──
 const COLUMNS = [
   'FADV Case ID','Name','Phone','Email','Location','FedEx ID','Recruiter','Source',
   'Route / Position','Shift','CPM','Sign in Bonus','Current Phase','Pipeline Status','Msg Answered',
@@ -11,7 +11,7 @@ const COLUMNS = [
   'I-9 Complete','SIG / FedEx ID Activated','English Assessment','Orientation',
   'Final Approval','Date Entered Phase','Last Update','Days in Phase','Follow-up Due',
   'Follow-up Sent','48h Alert','Auto Flags','Hire Date','Start Date',
-  'Assigned Terminal','Assigned Manager','Notes'
+  'Assigned Terminal','Assigned Manager','Notes','Daily Follow-up'
 ];
 
 const COL = Object.fromEntries(COLUMNS.map((c, i) => [c, i]));
@@ -29,7 +29,7 @@ const PIPELINE_STATUSES = [
   'Sent message','Sent message - Indeed','Call','Will think','FADV (First Advantage)',
   'Drug test / Docusign','Docusign','Drug test','Drug test results','Employment verification',
   'MEC','Orientation scheduled','I9 / SIG','English test','Under review','Wait on transfer',
-  'ROAD TEST / SKILLSOFT','GCIC','Hired','Gave 24hs notice','FADV Expired','FADV DUPLICATED',
+  'ROAD TEST / SKILLSOFT','Hired','Gave 24hs notice','FADV Expired','FADV DUPLICATED',
   'No Doubles&Triples','SAP DRIVER','No experience','Declined - Not interested',
   'Declined - No response','Declined - Failed drug test','Declined - Failed background check'
 ];
@@ -37,9 +37,9 @@ const PIPELINE_STATUSES = [
 const RECRUITERS = ['Bianka','Carol','Catarina','Margarita'];
 const SOURCES = ['Indeed','Referral','Walk-in','Website','Call','Other','Transfer'];
 const ROUTES = [
-  'ORL - 328','ORL - 327','MARIETTA - 305','ORL DRIVING TX','TX DOMICILED - DRIVING FL',
-  'MARIETTA - DRIVING TX','OCALA - 344','HOUSTON 774 TX','FORT WORTH 760 TX','SANFORD - 347',
-  'DALL 753 TX','TEXAS - (753-760-774)','ORL LOCAL','HOUSTON 754 TX'
+  'OTR - 328','OTR - 327','MARIETTA - 305','ORL DRIVING TX','TX DOMICILED - DRIVING FL',
+  'MARIETTA 305 - DRIVING TX','OCALA - 344','HOUSTON 774 TX','FORT WORTH 760 TX','SANFORD - 347',
+  'DALL 753 TX','HOUSTON 754 TX'
 ];
 const SHIFTS = ['OTR (48 states)','Local','Overnight','Day'];
 const YES_NO = ['Yes','No',''];
@@ -54,7 +54,7 @@ const ACTIVE_STATUSES = new Set([
   'Sent message','Sent message - Indeed','Call','Will think','FADV (First Advantage)',
   'Drug test / Docusign','Docusign','Drug test','Drug test results','Employment verification',
   'MEC','Orientation scheduled','I9 / SIG','English test','Under review','Wait on transfer',
-  'ROAD TEST / SKILLSOFT','GCIC','Gave 24hs notice'
+  'ROAD TEST / SKILLSOFT','Gave 24hs notice'
 ]);
 
 const DECLINED_STATUSES = new Set([
@@ -264,11 +264,13 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
   // Auto-suggest CPM based on Shift
   const handleShiftChange = (newShift) => {
     set(COL['Shift'], newShift);
-    // Suggest CPM defaults if empty
-    const currentCPM = row[COL['CPM']];
-    if (!currentCPM) {
-      if (newShift === 'Local') set(COL['CPM'], '$200');
-      else if (newShift === 'OTR (48 states)') set(COL['CPM'], '$0.45');
+    // For Local: always force $200 (fixes bug where CPM was getting erased)
+    if (newShift === 'Local') {
+      set(COL['CPM'], '$200');
+    } else if (newShift === 'OTR (48 states)') {
+      // For OTR: only suggest default if empty
+      const currentCPM = row[COL['CPM']];
+      if (!currentCPM || currentCPM === '$200') set(COL['CPM'], '$0.45');
     }
   };
 
@@ -322,6 +324,7 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
             <Field label="Shift" value={v(COL['Shift'])} onChange={handleShiftChange} options={SHIFTS} />
             <Field label="CPM / Pay Rate" value={v(COL['CPM'])} onChange={val => set(COL['CPM'], val)} options={CPM_OPTIONS} hint={cpmHint} />
             <Field label="Sign in Bonus ($1,000 after 90d)" value={v(COL['Sign in Bonus'])} onChange={val => set(COL['Sign in Bonus'], val)} options={YES_NO} />
+            <Field label="Daily Follow-up (contacted today)" value={v(COL['Daily Follow-up'])} onChange={val => set(COL['Daily Follow-up'], val)} options={YES_NO} />
             <Field label="Msg Answered" value={v(COL['Msg Answered'])} onChange={val => set(COL['Msg Answered'], val)} options={MSG_ANSWERED} />
           </div>
         </div>
@@ -349,7 +352,7 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
           <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a2e', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>🔍 Compliance</div>
           <div style={S.grid}>
             <Field label="FADV Link Sent" value={v(COL['FADV Link Sent'])} onChange={val => set(COL['FADV Link Sent'], val)} options={YES_NO} />
-            <Field label="FADV Completed" value={v(COL['FADV Completed'])} onChange={val => set(COL['FADV Completed'], val)} options={COMPLIANCE_VALS} />
+            <Field label="FADV Completed" value={v(COL['FADV Completed'])} onChange={val => set(COL['FADV Completed'], val)} options={YES_NO} />
             <Field label="FADV Status" value={v(COL['FADV Status'])} onChange={val => set(COL['FADV Status'], val)} options={COMPLIANCE_VALS} />
             <Field label="Background Review" value={v(COL['Background Review'])} onChange={val => set(COL['Background Review'], val)} options={COMPLIANCE_VALS} />
             <Field label="Criminal Review" value={v(COL['Criminal Review'])} onChange={val => set(COL['Criminal Review'], val)} options={COMPLIANCE_VALS} />
@@ -361,7 +364,7 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
             <Field label="Clearinghouse Consent" value={v(COL['Clearinghouse Consent'])} onChange={val => set(COL['Clearinghouse Consent'], val)} options={YES_NO} />
             <Field label="Clearinghouse Result" value={v(COL['Clearinghouse Result'])} onChange={val => set(COL['Clearinghouse Result'], val)} options={COMPLIANCE_VALS} />
             <Field label="Employment Verification" value={v(COL['Employment Verification'])} onChange={val => set(COL['Employment Verification'], val)} options={COMPLIANCE_VALS} />
-            <Field label="DQ File Complete" value={v(COL['DQ File Complete'])} onChange={val => set(COL['DQ File Complete'], val)} options={YES_NO} />
+            <Field label="DQ File Complete" value={v(COL['DQ File Complete'])} onChange={val => set(COL['DQ File Complete'], val)} options={['Pending','Complete','Issue']} />
             <Field label="I-9 Complete" value={v(COL['I-9 Complete'])} onChange={val => set(COL['I-9 Complete'], val)} options={YES_NO} />
             <Field label="SIG / FedEx ID Activated" value={v(COL['SIG / FedEx ID Activated'])} onChange={val => set(COL['SIG / FedEx ID Activated'], val)} options={YES_NO} />
             <Field label="English Assessment" value={v(COL['English Assessment'])} onChange={val => set(COL['English Assessment'], val)} options={COMPLIANCE_VALS} />
@@ -410,6 +413,37 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [saving, setSaving] = useState('');
   const [lastRefresh, setLastRefresh] = useState(null);
+
+  // Daily Follow-up — synced with Google Sheets (Yes/No)
+  const toggleFollowUp = async (rowIndex) => {
+    const row = candidates[rowIndex];
+    if (!row) return;
+    const currentValue = row[COL['Daily Follow-up']] || '';
+    const newValue = currentValue === 'Yes' ? 'No' : 'Yes';
+    // Optimistic update — update UI immediately
+    setCandidates(c => c.map((r, i) => {
+      if (i !== rowIndex) return r;
+      const updated = [...r];
+      updated[COL['Daily Follow-up']] = newValue;
+      return updated;
+    }));
+    // Persist to Google Sheets
+    try {
+      const updated = [...row];
+      updated[COL['Daily Follow-up']] = newValue;
+      updated[COL['Last Update']] = today();
+      await updateCandidate(rowIndex, updated);
+    } catch (e) {
+      // Revert on error
+      setCandidates(c => c.map((r, i) => {
+        if (i !== rowIndex) return r;
+        const reverted = [...r];
+        reverted[COL['Daily Follow-up']] = currentValue;
+        return reverted;
+      }));
+      alert('Error saving Daily Follow-up: ' + e.message);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -464,6 +498,7 @@ export default function App() {
     hired: candidates.filter(r => r[COL['Pipeline Status']] === 'Hired').length,
     overdue: candidates.filter(r => isOverdue(r)).length,
     declined: candidates.filter(r => DECLINED_STATUSES.has(r[COL['Pipeline Status']])).length,
+    contactedToday: candidates.filter(r => (r[COL['Daily Follow-up']] || '') === 'Yes').length,
   };
 
   return (
@@ -487,6 +522,7 @@ export default function App() {
           { label: 'Active', num: stats.active, color: '#0d6efd' },
           { label: 'Hired', num: stats.hired, color: '#198754' },
           { label: '⚠ Overdue', num: stats.overdue, color: '#dc3545' },
+          { label: '✓ Contacted today', num: stats.contactedToday, color: '#20c997' },
           { label: 'Declined', num: stats.declined, color: '#6c757d' },
         ].map(s => (
           <div key={s.label} style={S.stat}>
@@ -546,22 +582,33 @@ export default function App() {
           <table style={S.table}>
             <thead>
               <tr>
-                {['Name','Phone','Recruiter','Route / Position','CPM','Bonus','Current Phase','Pipeline Status','D&T','Days','Flags',''].map(h => (
+                {['✓','Name','Phone','Recruiter','Route / Position','CPM','Bonus','Current Phase','Pipeline Status','D&T','Days','Notes','Flags',''].map(h => (
                   <th key={h} style={S.th}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={12} style={{ ...S.td, textAlign: 'center', color: '#999', padding: 40 }}>No candidates found</td></tr>
+                <tr><td colSpan={14} style={{ ...S.td, textAlign: 'center', color: '#999', padding: 40 }}>No candidates found</td></tr>
               ) : filtered.map((row, i) => {
                 const realIndex = candidates.indexOf(row);
                 const overdue = isOverdue(row);
                 const flags = row[COL['Auto Flags']] || getAutoFlags(row);
+                const name = row[COL['Name']] || '';
+                const isFollowedUp = (row[COL['Daily Follow-up']] || '') === 'Yes';
                 return (
-                  <tr key={realIndex} style={{ background: overdue ? '#fff8e1' : undefined }}>
+                  <tr key={realIndex} style={{ background: overdue ? '#fff8e1' : (isFollowedUp ? '#e8f5e9' : undefined) }}>
+                    <td style={{ ...S.td, textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={isFollowedUp}
+                        onChange={() => toggleFollowUp(realIndex)}
+                        style={{ width: 18, height: 18, cursor: 'pointer' }}
+                        title="Marcar como contactado hoje (salva na planilha)"
+                      />
+                    </td>
                     <td style={S.td}>
-                      <strong>{row[COL['Name']] || '—'}</strong>
+                      <strong>{name || '—'}</strong>
                       {overdue && <span style={{ marginLeft: 6, fontSize: 11, color: '#dc3545' }}>⚠ OVERDUE</span>}
                     </td>
                     <td style={S.td}>{row[COL['Phone']] || '—'}</td>
@@ -584,6 +631,11 @@ export default function App() {
                     </td>
                     <td style={{ ...S.td, color: Number(daysInPhase(row[COL['Date Entered Phase']])) > 2 ? '#dc3545' : undefined }}>
                       {daysInPhase(row[COL['Date Entered Phase']]) ?? '—'}
+                    </td>
+                    <td style={{ ...S.td, maxWidth: 220, fontSize: 12, color: '#555' }}>
+                      <div title={row[COL['Notes']] || ''} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
+                        {row[COL['Notes']] || '—'}
+                      </div>
                     </td>
                     <td style={{ ...S.td, maxWidth: 180, fontSize: 11, color: '#dc3545' }}>
                       {flags || ''}
