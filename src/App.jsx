@@ -294,17 +294,43 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
     setSaving(false);
   };
 
+  // Check if any field has been filled in (for new candidate) or changed (for edit)
+  const hasContent = () => {
+    if (isNew) {
+      // For new candidate, check if any meaningful field has content
+      const meaningfulFields = [
+        COL['Name'], COL['Phone'], COL['Email'], COL['Location'], COL['FedEx ID'],
+        COL['FADV Case ID'], COL['Recruiter'], COL['Source'], COL['Route / Position'],
+        COL['Shift'], COL['Experience'], COL['Notes']
+      ];
+      return meaningfulFields.some(col => (row[col] || '').trim() !== '');
+    } else {
+      // For edit, check if any field changed from original
+      return candidate && row.some((val, i) => (val || '') !== (candidate[i] || ''));
+    }
+  };
+
+  const handleClose = () => {
+    if (hasContent()) {
+      const message = isNew
+        ? 'Você tem informações preenchidas. Deseja realmente sair sem salvar?'
+        : 'Você tem alterações não salvas. Deseja realmente sair sem salvar?';
+      if (!window.confirm(message)) return;
+    }
+    onClose();
+  };
+
   const v = (col) => row[col] || '';
   const shift = v(COL['Shift']);
   const cpmHint = shift === 'Local' ? '$ per day (Local = $200/day)' :
                   shift === 'OTR (48 states)' ? '$ per mile (split miles)' : '';
 
   return (
-    <div style={S.modal} onClick={e => e.target === e.currentTarget && onClose()}>
+    <div style={S.modal}>
       <div style={S.modalBox}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h2 style={S.modalTitle}>{isNew ? '➕ New Candidate' : `✏️ ${v(COL['Name']) || 'Edit Candidate'}`}</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#666' }}>✕</button>
+          <button onClick={handleClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#666' }}>✕</button>
         </div>
 
         {/* Flags warning */}
@@ -393,7 +419,7 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
         </div>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button style={S.btn('#6c757d')} onClick={onClose}>Cancel</button>
+          <button style={S.btn('#6c757d')} onClick={handleClose}>Cancel</button>
           <button style={S.btn('#198754')} onClick={handleSave} disabled={saving}>
             {saving ? 'Saving...' : '💾 Save to Google Sheets'}
           </button>
