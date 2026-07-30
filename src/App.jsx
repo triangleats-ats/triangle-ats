@@ -34,11 +34,11 @@ const PIPELINE_STATUSES = [
   'Declined - No response','Declined - Failed drug test','Declined - Failed background check'
 ];
 
-const RECRUITERS = ['Carol','Catarina','Margarita'];
-const SOURCES = ['Indeed','Referral','Walk-in','Call','Other','Transfer'];
+const RECRUITERS = ['Bianka','Carol','Catarina','Margarita'];
+const SOURCES = ['Indeed','Referral','Walk-in','Website','Call','Other','Transfer'];
 const ROUTES = [
-  'ORL - 328','ORL - 327','MARIETTA - 305','SANFORD - 347','OCALA - 344','ORL DRIVING TX','TX DRIVING FL',
-  'MARIETTA 305 - DRIVING TX','HOUSTON 774 TX','FORT WORTH 760 TX',
+  'OTR - 328','OTR - 327','MARIETTA - 305','ORL DRIVING TX','TX DOMICILED - DRIVING FL',
+  'MARIETTA 305 - DRIVING TX','OCALA - 344','HOUSTON 774 TX','FORT WORTH 760 TX','SANFORD - 347',
   'DALL 753 TX','HOUSTON 754 TX'
 ];
 const SHIFTS = ['OTR (48 states)','Local','Overnight','Day'];
@@ -49,6 +49,9 @@ const MSG_ANSWERED = ['Yes','No','Read','Call',''];
 
 // CPM options — OTR rates per mile + Local daily rate
 const CPM_OPTIONS = ['$0.37','$0.40','$0.42','$0.45','$200'];
+
+// Options — driver's choice between sign-in bonus or mileage goal
+const OPTIONS_VALUES = ['A - Bonus $2,000','B - 20.000 miles','Will think'];
 
 const ACTIVE_STATUSES = new Set([
   'Sent message','Sent message - Indeed','Call','Will think','FADV (First Advantage)',
@@ -323,7 +326,7 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
             <Field label="Route / Position" value={v(COL['Route / Position'])} onChange={val => set(COL['Route / Position'], val)} options={ROUTES} />
             <Field label="Shift" value={v(COL['Shift'])} onChange={handleShiftChange} options={SHIFTS} />
             <Field label="CPM / Pay Rate" value={v(COL['CPM'])} onChange={val => set(COL['CPM'], val)} options={CPM_OPTIONS} hint={cpmHint} />
-            <Field label="Sign in Bonus ($1,000 after 90d)" value={v(COL['Sign in Bonus'])} onChange={val => set(COL['Sign in Bonus'], val)} options={YES_NO} />
+            <Field label="Options" value={v(COL['Sign in Bonus'])} onChange={val => set(COL['Sign in Bonus'], val)} options={OPTIONS_VALUES} />
             <Field label="Daily Follow-up (contacted today)" value={v(COL['Daily Follow-up'])} onChange={val => set(COL['Daily Follow-up'], val)} options={YES_NO} />
             <Field label="Msg Answered" value={v(COL['Msg Answered'])} onChange={val => set(COL['Msg Answered'], val)} options={MSG_ANSWERED} />
           </div>
@@ -582,7 +585,7 @@ export default function App() {
           <table style={S.table}>
             <thead>
               <tr>
-                {['✓','Name','Phone','Recruiter','Route / Position','CPM','Bonus','Current Phase','Pipeline Status','D&T','Days','Notes','Flags',''].map(h => (
+                {['✓','Name','Phone','Recruiter','Route / Position','CPM','Options','Current Phase','Pipeline Status','D&T','Days','Notes','Flags',''].map(h => (
                   <th key={h} style={S.th}>{h}</th>
                 ))}
               </tr>
@@ -615,7 +618,12 @@ export default function App() {
                     <td style={S.td}>{row[COL['Recruiter']] || '—'}</td>
                     <td style={S.td}>{row[COL['Route / Position']] || '—'}</td>
                     <td style={{ ...S.td, fontWeight: 600, color: '#198754' }}>{row[COL['CPM']] || '—'}</td>
-                    <td style={S.td}>{row[COL['Sign in Bonus']] === 'Yes' ? '💰 Yes' : (row[COL['Sign in Bonus']] || '—')}</td>
+                    <td style={S.td}>{
+                      row[COL['Sign in Bonus']] === 'A - Bonus $2,000' ? '💰 A - $2,000' :
+                      row[COL['Sign in Bonus']] === 'B - 20.000 miles' ? '🚛 B - 20k mi' :
+                      row[COL['Sign in Bonus']] === 'Will think' ? '🤔 Will think' :
+                      (row[COL['Sign in Bonus']] || '—')
+                    }</td>
                     <td style={S.td}>
                       <span style={S.badge(phaseColor(row[COL['Current Phase']]))}>
                         {row[COL['Current Phase']] || '—'}
