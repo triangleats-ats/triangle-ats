@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 // ── Column definitions (matches spreadsheet columns A→AY, 51 cols) ──
 const COLUMNS = [
   'FADV Case ID','Name','Phone','Email','Location','FedEx ID','Recruiter','Source',
-  'Route / Position','Shift','CPM','Options','Current Phase','Pipeline Status','Msg Answered',
+  'Route / Position','Shift','CPM','Sign in Bonus','Current Phase','Pipeline Status','Msg Answered',
   'CDL Class','Experience','Doubles & Triples','FADV Link Sent','FADV Completed',
   'FADV Status','Background Review','Criminal Review','MVR Review','Drug Test Sent',
   'Drug Test Result','DocuSign Sent','DocuSign Signed','Clearinghouse Consent',
@@ -27,19 +27,20 @@ const PHASES = [
 
 const PIPELINE_STATUSES = [
   'Sent message','Sent message - Indeed','Call','Will think','FADV (First Advantage)',
-  'Drug test / Docusign','Docusign','Drug test','Drug test results','Employment verification',
-  'MEC','Orientation scheduled','I9 / SIG','English test','Under review','Wait on transfer',
+  'Drug test / Docusign','Docusign','Take Drug test','Drug test results','Employment verification',
+  'MEC','Orientation scheduled','I9 / SIG','English test','Under review','Wait on transfer', 'Criminal Records'
   'ROAD TEST / SKILLSOFT','Hired','Gave 24hs notice','FADV Expired','FADV DUPLICATED',
   'No Doubles&Triples','SAP DRIVER','No experience','Declined - Not interested',
-  'Declined - No response','Declined - Failed drug test','Declined - Failed background check'
+  'Declined - No response','Declined - Failed drug test','Declined - Failed background check',
+  'Declined - Failed Road Test'
 ];
 
-const RECRUITERS = ['Bianka','Carol','Catarina','Margarita'];
-const SOURCES = ['Indeed','Referral','Walk-in','Website','Call','Other','Transfer'];
+const RECRUITERS = ['Catarina','Margarita','Roger'];
+const SOURCES = ['Indeed','Referral','Walk-in','Website','Call','Transfer','Wait list','Other'];
 const ROUTES = [
-  'OTR - 328','OTR - 327','MARIETTA - 305','ORL DRIVING TX','TX DOMICILED - DRIVING FL',
-  'MARIETTA 305 - DRIVING TX','OCALA - 344','HOUSTON 774 TX','FORT WORTH 760 TX','SANFORD - 347',
-  'DALL 753 TX','HOUSTON 754 TX'
+  'ORL - 328','ORL - 327','MARIETTA - 305','SANFORD - 347','ORL DRIVING TX','TX DOMICILED - DRIVING FL',
+  'MARIETTA 305 - DRIVING TX','OCALA - 344','HOUSTON 774 TX','FORT WORTH 760 TX',
+  'DALL 753 TX'
 ];
 const SHIFTS = ['OTR (48 states)','Local','Overnight','Day'];
 const YES_NO = ['Yes','No',''];
@@ -48,7 +49,7 @@ const DRUG_RESULTS = ['Pending','Negative','Positive',''];
 const MSG_ANSWERED = ['Yes','No','Read','Call',''];
 
 // CPM options — OTR rates per mile + Local daily rate
-const CPM_OPTIONS = ['$0.37','$0.40','$0.42','$0.45','$200'];
+const CPM_OPTIONS = ['$0.37','$0.40','$0.42','$0.45','$0.70','$0.75','$200'];
 
 // Options — driver's choice between sign-in bonus or mileage goal
 const OPTIONS_VALUES = ['A - Bonus $2,000','B - 20.000 miles','Will think'];
@@ -57,13 +58,13 @@ const ACTIVE_STATUSES = new Set([
   'Sent message','Sent message - Indeed','Call','Will think','FADV (First Advantage)',
   'Drug test / Docusign','Docusign','Drug test','Drug test results','Employment verification',
   'MEC','Orientation scheduled','I9 / SIG','English test','Under review','Wait on transfer',
-  'ROAD TEST / SKILLSOFT','Gave 24hs notice'
+  'ROAD TEST / SKILLSOFT','Gave 24hs notice','Criminal Records','Take Drug test'
 ]);
 
 const DECLINED_STATUSES = new Set([
   'Declined - Not interested','Declined - No response','Declined - Failed drug test',
   'Declined - Failed background check','FADV Expired','FADV DUPLICATED','No Doubles&Triples',
-  'SAP DRIVER','No experience'
+  'SAP DRIVER','No experience','Declined - Failed Road Test'
 ]);
 
 // ── API helpers ──
@@ -352,7 +353,7 @@ function CandidateModal({ candidate, rowIndex, onClose, onSave, isNew }) {
             <Field label="Route / Position" value={v(COL['Route / Position'])} onChange={val => set(COL['Route / Position'], val)} options={ROUTES} />
             <Field label="Shift" value={v(COL['Shift'])} onChange={handleShiftChange} options={SHIFTS} />
             <Field label="CPM / Pay Rate" value={v(COL['CPM'])} onChange={val => set(COL['CPM'], val)} options={CPM_OPTIONS} hint={cpmHint} />
-            <Field label="Options" value={v(COL['Options'])} onChange={val => set(COL['Options'], val)} options={OPTIONS_VALUES} />
+            <Field label="Options" value={v(COL['Sign in Bonus'])} onChange={val => set(COL['Sign in Bonus'], val)} options={OPTIONS_VALUES} />
             <Field label="Daily Follow-up (contacted today)" value={v(COL['Daily Follow-up'])} onChange={val => set(COL['Daily Follow-up'], val)} options={YES_NO} />
             <Field label="Msg Answered" value={v(COL['Msg Answered'])} onChange={val => set(COL['Msg Answered'], val)} options={MSG_ANSWERED} />
           </div>
@@ -645,10 +646,10 @@ export default function App() {
                     <td style={S.td}>{row[COL['Route / Position']] || '—'}</td>
                     <td style={{ ...S.td, fontWeight: 600, color: '#198754' }}>{row[COL['CPM']] || '—'}</td>
                     <td style={S.td}>{
-                      row[COL['Options']] === 'A - Bonus $2,000' ? '💰 A - $2,000' :
-                      row[COL['Options']] === 'B - 20.000 miles' ? '🚛 B - 20k mi' :
-                      row[COL['Options']] === 'Will think' ? '🤔 Will think' :
-                      (row[COL['Options']] || '—')
+                      row[COL['Sign in Bonus']] === 'A - Bonus $2,000' ? '💰 A - $2,000' :
+                      row[COL['Sign in Bonus']] === 'B - 20.000 miles' ? '🚛 B - 20k mi' :
+                      row[COL['Sign in Bonus']] === 'Will think' ? '🤔 Will think' :
+                      (row[COL['Sign in Bonus']] || '—')
                     }</td>
                     <td style={S.td}>
                       <span style={S.badge(phaseColor(row[COL['Current Phase']]))}>
