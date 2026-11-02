@@ -28,7 +28,7 @@ const PHASES = [
 const PIPELINE_STATUSES = [
   'Sent message','Sent message - Indeed','Call','Will think','FADV (First Advantage)',
   'Drug test / Docusign','Docusign','Take Drug test','Drug test results','Employment verification',
-  'MEC','Orientation scheduled','I9 / SIG','English test','Under review','Wait on transfer', 'Criminal Records'
+  'MEC','Orientation scheduled','I9 / SIG','English test','Under review','Wait on transfer', 'Criminal Records',
   'ROAD TEST / SKILLSOFT','Hired','Gave 24hs notice','FADV Expired','FADV DUPLICATED',
   'No Doubles&Triples','SAP DRIVER','No experience','Declined - Not interested',
   'Declined - No response','Declined - Failed drug test','Declined - Failed background check',
